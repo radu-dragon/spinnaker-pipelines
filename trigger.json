@@ -1,0 +1,138 @@
+{
+  "keepWaitingPipelines": false,
+  "lastModifiedBy": "radu.dragan@armory.io",
+  "limitConcurrent": true,
+  "parameterConfig": [
+    {
+      "default": "radu",
+      "description": "Deployment Cluster Name",
+      "hasOptions": false,
+      "label": "cluster",
+      "name": "cluster",
+      "options": [
+        {
+          "value": ""
+        }
+      ],
+      "pinned": true,
+      "required": true
+    },
+    {
+      "default": "Terraform_Provisioner",
+      "description": "Harness Project Name",
+      "hasOptions": false,
+      "label": "project",
+      "name": "project",
+      "options": [
+        {
+          "value": ""
+        }
+      ],
+      "pinned": true,
+      "required": true
+    },
+    {
+      "default": "default",
+      "description": "Harness Organization Name",
+      "hasOptions": false,
+      "label": "organization",
+      "name": "organization",
+      "options": [
+        {
+          "value": ""
+        }
+      ],
+      "pinned": true,
+      "required": true
+    }
+  ],
+  "roles": [
+    "spinnaker-admin"
+  ],
+  "schema": "1",
+  "spelEvaluator": "v4",
+  "stages": [
+    {
+      "account": "k8s-default",
+      "cloudProvider": "kubernetes",
+      "manifests": [
+        {
+          "apiVersion": "batch/v1",
+          "kind": "Job",
+          "metadata": {
+            "generateName": "curl-job-"
+          },
+          "spec": {
+            "backoffLimit": 2,
+            "template": {
+              "spec": {
+                "containers": [
+                  {
+                    "args": [
+                      "-X",
+                      "POST",
+                      "-H",
+                      "Content-Type: application/json",
+                      "-d",
+                      "{\"cluster\": \"${input_cluster}\", \"organization\": \"${input_organization}\", \"project\": \"${input_project}\"}",
+                      "https://app.harness.io/gateway/pipeline/api/webhook/custom/v2?accountIdentifier=Zj4OKPnVSJSTA0LFDHKNaA&orgIdentifier=default&projectIdentifier=Terraform_Provisioner&pipelineIdentifier=Lloyds_Terraform_Automation&triggerIdentifier=trigger"
+                    ],
+                    "command": [
+                      "curl"
+                    ],
+                    "image": "curlimages/curl:latest",
+                    "name": "curl-container"
+                  }
+                ],
+                "restartPolicy": "Never"
+              }
+            },
+            "ttlSecondsAfterFinished": 120
+          }
+        }
+      ],
+      "moniker": {
+        "app": "k8s-deployment"
+      },
+      "name": "Deploy (Manifest)",
+      "namespaceOverride": "radu-deployment-strategies",
+      "refId": "1",
+      "requisiteStageRefIds": [
+        "2"
+      ],
+      "skipExpressionEvaluation": false,
+      "source": "text",
+      "trafficManagement": {
+        "enabled": false,
+        "options": {
+          "enableTraffic": false,
+          "services": []
+        }
+      },
+      "type": "deployManifest"
+    },
+    {
+      "failOnFailedExpressions": true,
+      "name": "Evaluate Variables",
+      "refId": "2",
+      "requisiteStageRefIds": [],
+      "type": "evaluateVariables",
+      "variables": [
+        {
+          "key": "input_cluster",
+          "value": "${ parameters.cluster }"
+        },
+        {
+          "key": "input_organization",
+          "value": "${ parameters.organization }"
+        },
+        {
+          "key": "input_project",
+          "value": "${ parameters.project }"
+        }
+      ]
+    }
+  ],
+  "triggers": [],
+  "updateTs": "1716372400000"
+}
